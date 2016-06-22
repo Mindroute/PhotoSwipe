@@ -1,6 +1,6 @@
-/*! PhotoSwipe Default UI - 4.1.1 - 2015-12-24
+/*! PhotoSwipe Default UI - 4.1.1 - 2016-06-22
 * http://photoswipe.com
-* Copyright (c) 2015 Dmitry Semenov; */
+* Copyright (c) 2016 Dmitry Semenov; */
 /**
 *
 * UI on top of main sliding area (caption, arrows, close button, etc.).
@@ -83,7 +83,8 @@ var PhotoSwipeUI_Default =
 													'?url={{url}}&media={{image_url}}&description={{text}}'},
 				{id:'download', label:'Download image', url:'{{raw_image_url}}', download:true}
 			],
-			getImageURLForShare: function( /* shareButtonData */ ) {
+			getImageURLForShare: function ( /* shareButtonData */) {
+			    
 				return pswp.currItem.src || '';
 			},
 			getPageURLForShare: function( /* shareButtonData */ ) {
@@ -92,6 +93,11 @@ var PhotoSwipeUI_Default =
 			getTextForShare: function( /* shareButtonData */ ) {
 				return pswp.currItem.title || '';
 			},
+			getImagePageURLForShare: function (/* shareButtonData */) {
+			    
+			    return pswp.currItem.pageurl || '';
+		    },
+			
 				
 			indexIndicatorSep: ' / ',
 			fitControlsWidth: 1200
@@ -210,13 +216,18 @@ var PhotoSwipeUI_Default =
 				return true;
 			}
 
-			window.open(target.href, 'pswp_share', 'scrollbars=yes,resizable=yes,toolbar=no,'+
-										'location=yes,width=550,height=420,top=100,left=' + 
-										(window.screen ? Math.round(screen.width / 2 - 275) : 100)  );
+			if (target.target === "_blank") {
+			    window.open(target.href, 'pswp_share', 'scrollbars=yes,resizable=yes,toolbar=no,' +
+			        'location=yes,width=550,height=420,top=100,left=' +
+			        (window.screen ? Math.round(screen.width / 2 - 275) : 100));
 
-			if(!_shareModalHidden) {
-				_toggleShareModal();
+			    if (!_shareModalHidden) {
+			        _toggleShareModal();
+			    }
+			} else {
+			    window.location.href = target.href;
 			}
+			
 			
 			return false;
 		},
@@ -226,21 +237,26 @@ var PhotoSwipeUI_Default =
 				shareURL,
 				image_url,
 				page_url,
-				share_text;
-
+				share_text,
+				target,
+				image_page_url;
+                
 			for(var i = 0; i < _options.shareButtons.length; i++) {
 				shareButtonData = _options.shareButtons[i];
 
 				image_url = _options.getImageURLForShare(shareButtonData);
+				image_page_url = _options.getImagePageURLForShare(shareButtonData);
 				page_url = _options.getPageURLForShare(shareButtonData);
 				share_text = _options.getTextForShare(shareButtonData);
-
+				target = shareButtonData.target;
+                
 				shareURL = shareButtonData.url.replace('{{url}}', encodeURIComponent(page_url) )
-									.replace('{{image_url}}', encodeURIComponent(image_url) )
+									.replace('{{image_url}}', encodeURIComponent(image_url))
+                                    .replace('{{image_page_url}}', image_page_url)
 									.replace('{{raw_image_url}}', image_url )
 									.replace('{{text}}', encodeURIComponent(share_text) );
-
-				shareButtonOut += '<a href="' + shareURL + '" target="_blank" '+
+				
+				shareButtonOut += '<a href="' + shareURL + '"  '+
 									'class="pswp__share--' + shareButtonData.id + '"' +
 									(shareButtonData.download ? 'download' : '') + '>' + 
 									shareButtonData.label + '</a>';
@@ -249,6 +265,7 @@ var PhotoSwipeUI_Default =
 					shareButtonOut = _options.parseShareButtonOut(shareButtonData, shareButtonOut);
 				}
 			}
+			
 			_shareModal.children[0].innerHTML = shareButtonOut;
 			_shareModal.children[0].onclick = _openWindowPopup;
 
